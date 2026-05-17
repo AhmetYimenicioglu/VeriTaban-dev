@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Destekli Mühendislik Planlayıcı</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        
+        body { background-color: var(--bg-color); color: var(--text-main); display: flex; justify-content: center; padding: 40px 20px; min-height: 100vh; }
+        
+        .container { background: var(--card-bg); padding: 40px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); width: 100%; max-width: 800px; border: 1px solid rgba(0,0,0,0.05); }
+        
+        .header { text-align: center; margin-bottom: 35px; }
+        .header h1 { font-size: 24px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .header p { color: var(--text-muted); font-size: 14px; margin-top: 8px; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: var(--text-main); }
+        .form-group input, .form-group select { width: 100%; padding: 14px 16px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 15px; outline: none; transition: all 0.2s ease; background-color: #f8fafc; color: var(--text-main); }
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); background-color: #fff; }
+
+        .btn-submit { width: 100%; padding: 16px; background-color: var(--primary); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
+        .btn-submit:hover { background-color: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
+        .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+        /* Yükleme Animasyonu */
+        .spinner { display: none; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Sekme Sistemi */
+        .results-container { display: none; margin-top: 40px; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .tabs { display: flex; gap: 10px; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 12px; background: transparent; border: none; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-radius: 8px; transition: 0.2s; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .tab-btn:hover:not(.active) { background: #e2e8f0; }
+
+        .tab-content { display: none; padding: 20px; background: #f8fafc; border-radius: 12px; font-size: 15px; line-height: 1.8; color: var(--text-main); white-space: pre-wrap; border: 1px solid var(--border-color); }
+        .tab-content.active { display: block; }
+
+        .footer { margin-top: 40px; text-align: center; font-size: 13px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>⚙️ AI Destekli Proje Planlayıcı</h1>
+        <p>Sisteme hedefinizi girin, Gemini AI size özel 3 haftalık yol haritası çıkarsın.</p>
+    </div>
+    
+    <div id="input-section">
+        <div class="form-group">
+            <label for="studentName">Öğrenci Adı Soyadı</label>
+            <input type="text" id="studentName" placeholder="Örn: Ahmet Yimenicioğlu" autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label for="selectedArea">Uzmanlık Alanı</label>
+            <select id="selectedArea">
+                <option value="Python Programlama">Python Programlama</option>
+                <option value="Siber Güvenlik ve Etik Hackerlık">Siber Güvenlik ve Etik Hackerlık</option>
+                <option value="Embedded Systems (Raspberry Pi/Pixhawk)">Embedded Systems (Raspberry Pi/Pixhawk)</option>
+                <option value="Web Geliştirme (ASP.NET MVC)">Web Geliştirme (ASP.NET MVC)</option>
+            </select>
+        </div>
+        <button id="submitBtn" class="btn-submit" onclick="generatePlan()">
+            <span id="btnText">Yol Haritasını Oluştur</span>
+            <div id="spinner" class="spinner"></div>
+        </button>
+    </div>
+
+    <div class="results-container" id="resultsContainer">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(1)" id="btnTab1">1. HAFTA</button>
+            <button class="tab-btn" onclick="switchTab(2)" id="btnTab2">2. HAFTA</button>
+            <button class="tab-btn" onclick="switchTab(3)" id="btnTab3">3. HAFTA</button>
+        </div>
+
+        <div class="tab-content active" id="content1"></div>
+        <div class="tab-content" id="content2"></div>
+        <div class="tab-content" id="content3"></div>
+    </div>
+
+    <div class="footer">
+        Bu sistem n8n (Webhook + SQL) ve Google Gemini AI kullanılarak geliştirilmiştir.
+    </div>
+</div>
+
+<script>
+    // Sekme Değiştirme Mantığı
+    function switchTab(tabNum) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        document.getElementById('btnTab' + tabNum).classList.add('active');
+        document.getElementById('content' + tabNum).classList.add('active');
+    }
+
+    // Ana Veri Çekme Fonksiyonu
+    async function generatePlan() {
+        const name = document.getElementById('studentName').value.trim();
+        const area = document.getElementById('selectedArea').value;
+        const btn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const spinner = document.getElementById('spinner');
+        const results = document.getElementById('resultsContainer');
+        
+        // DİKKAT: BURAYA KENDİ N8N WEBHOOK TEST URL'Nİ YAPIŞTIR
+        // Kodun içindeki bağlantı şu an tam olarak bu:
+const WEBHOOK_URL = 'http://localhost:5678/webhook-test/7637cb3d-a725-4cfa-813a-aba130a0d202';
+        if(!name) { 
+            alert("Lütfen işleme başlamadan önce adınızı girin."); 
+            document.getElementById('studentName').focus();
+            return; 
+        }
+
+        // Yükleme Durumu Aktif
+        btn.disabled = true;
+        btnText.innerText = "Yapay Zeka Analiz Ediyor...";
+        spinner.style.display = "block";
+        results.style.display = "none";
+
+        try {
+            const response = await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    "Öğrenci Adı": name, 
+                    "Lütfen Öğrenmek İstediğiniz Alanı Seçin": area 
+                })
+            });
+
+            const data = await response.json();
+            
+            // Veriyi güvenli şekilde yakalama
+            let fullText = "";
+            if (data.output) fullText = data.output;
+            else if (Array.isArray(data) && data[0].output) fullText = data[0].output;
+            else fullText = JSON.stringify(data);
+
+            // Metni AI başlıklarına göre akıllıca bölme
+            if (fullText.includes('#### 2.')) {
+                const parts = fullText.split('#### 2.');
+                document.getElementById('content1').innerText = parts[0].replace('#### 1. Hafta', '').replace('#### 1.', '').trim();
+                
+                if (parts[1].includes('#### 3.')) {
+                    const subParts = parts[1].split('#### 3.');
+                    document.getElementById('content2').innerText = subParts[0].replace('Hafta', '').trim();
+                    document.getElementById('content3').innerText = subParts[1].replace('Hafta', '').trim();
+                } else {
+                    document.getElementById('content2').innerText = parts[1].replace('Hafta', '').trim();
+                    document.getElementById('content3').innerText = "Bu haftanın detayları sistem tarafından işlenemedi.";
+                }
+            } else {
+                // AI metni bölmezse her şeyi ilk sekmeye bas
+                document.getElementById('content1').innerText = fullText;
+                document.getElementById('content2').innerText = "Tüm plan 1. Hafta sekmesinde birleştirilmiştir.";
+                document.getElementById('content3').innerText = "Tüm plan 1. Hafta sekmesinde birleştirilmiştir.";
+            }
+
+            // Başarılı Durum
+            switchTab(1); // Veri gelince hep 1. sekmeye dön
+            results.style.display = "block";
+
+        } catch (error) {
+            console.error("Fetch Hatası:", error);
+            document.getElementById('content1').innerText = "❌ Sunucuya bağlanılamadı. n8n uygulamasının çalıştığından ve Webhook URL'sinin doğru olduğundan emin olun.";
+            document.getElementById('content2').innerText = "-";
+            document.getElementById('content3').innerText = "-";
+            results.style.display = "block";
+        } finally {
+            // Butonu Eski Haline Getir
+            btn.disabled = false;
+            btnText.innerText = "Yol Haritasını Oluştur";
+            spinner.style.display = "none";
+        }
+    }
+</script>
+
+</body>
+</html>
