@@ -1,0 +1,407 @@
+{
+  "name": "Ogrenci Ogrenme Yolu - v7 Final",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "7637cb3d-a725-4cfa-813a-aba130a0d202",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        5616,
+        3008
+      ],
+      "id": "41ed4217-0e99-45a1-a94c-68e83ec1a06b",
+      "name": "Webhook",
+      "webhookId": "7eade150-3eb9-4583-9530-4c385d550cd8"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.all()[0].json;\nconst body = input.body || input;\nconst cleanInput = body['Lütfen Öğrenmek İstediğiniz Alanı Seçin'] || '';\nreturn [{ json: { cleanInput } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5840,
+        3008
+      ],
+      "id": "a0d079a0-3a54-47d0-9711-e1d954dbf476",
+      "name": "Input_Validator"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1,
+            "type": "string",
+            "value": ""
+          },
+          "conditions": [
+            {
+              "id": "cond-1111-2222-3333-444444444444",
+              "leftValue": "={{ $json.cleanInput }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        6032,
+        3008
+      ],
+      "id": "c20fac58-2d0f-453b-b676-209203b13e69",
+      "name": "Check_Input"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT TOP 1 * FROM OgrenciYollari \nWHERE Durum = 'Bekliyor' \nAND IlgiAlani LIKE '%' + '{{ $node[\"Input_Validator\"].json.cleanInput }}' + '%';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.microsoftSql",
+      "typeVersion": 1.1,
+      "position": [
+        6240,
+        3008
+      ],
+      "id": "0aafa8f3-4845-4d58-b17f-31d4e053cf54",
+      "name": "Student_Finder",
+      "credentials": {
+        "microsoftSql": {
+          "id": "ZBhYh5pyqiSmAH3m",
+          "name": "Microsoft SQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond-2222-3333-4444-555555555555",
+              "leftValue": "={{ String($json.ID) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        6432,
+        3008
+      ],
+      "id": "9ae5c5e0-3ea3-4b06-99de-bc7c06160885",
+      "name": "Check_Record"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE OgrenciYollari \nSET Durum = 'İşleniyor' \nWHERE ID = {{ $node[\"Student_Finder\"].json.ID }};",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.microsoftSql",
+      "typeVersion": 1.1,
+      "position": [
+        6640,
+        3008
+      ],
+      "id": "688ed0f0-dee9-4f29-96c4-3f5ca4a5ca16",
+      "name": "Student_Locker",
+      "credentials": {
+        "microsoftSql": {
+          "id": "ZBhYh5pyqiSmAH3m",
+          "name": "Microsoft SQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Sen bir teknik mentorsun. Kullanıcı sana seçtiği uzmanlık alanını gönderecek.\n\nKURALLAR:\n- Eğer Python Programlama seçtiyse: Pandas, NumPy, veri analizi ve otomasyon konularına odaklan.\n- Eğer Siber Güvenlik ve Etik Hackerlık seçtiyse: Nmap, Metasploit, ağ güvenliği ve sızma testi odaklı bir plan sun.\n- Eğer Embedded Systems seçtiyse: Pixhawk, Raspberry Pi 5, otonom sistemler ve donanım programlama detaylarına gir.\n- Eğer Web Geliştirme (ASP.NET MVC) seçtiyse: C#, MVC mimarisi, Entity Framework, REST API ve modern web teknolojilerine odaklan.\n\nCevabın 2800 karakteri geçmesin ve Markdown formatında olsun.\nCevabını verirken mutlaka şu başlıkları kullan: #### 1. Hafta, #### 2. Hafta, #### 3. Hafta\n\nÖğrenci: {{ $node[\"Student_Finder\"].json.OgrenciAd }}\nİlgi Alanı: {{ $node[\"Student_Finder\"].json.IlgiAlani }}\nHedef: {{ $node[\"Student_Finder\"].json.Hedef }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        6784,
+        3008
+      ],
+      "id": "49ed1999-8830-4f04-b253-674d574d67bd",
+      "name": "AI_Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        6832,
+        3312
+      ],
+      "id": "3e95e4db-453d-4d48-97fc-f54d1554b063",
+      "name": "Gemini_Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "zGtMf5Q1A9tvNbr0",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = $json.output || '';\nconst clean = output\n  .replace(/'/g, \"''\")\n  .replace(/;/g, '')\n  .replace(/--/g, '')\n  .replace(/\\/\\*/g, '')\n  .replace(/\\*\\//g, '')\n  .replace(/\\\\/g, '')\n  .substring(0, 2800);\nreturn [{ json: { cleanOutput: clean } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7040,
+        3008
+      ],
+      "id": "5f4793d4-a225-474a-8d78-f8c370984fe6",
+      "name": "Output_Sanitizer"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE OgrenciYollari \nSET Durum = 'Tamamlandı', \n    OgrenmeYolu = '{{ $node[\"Output_Sanitizer\"].json.cleanOutput }}'\nWHERE ID = {{ $node[\"Student_Finder\"].json.ID }};",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.microsoftSql",
+      "typeVersion": 1.1,
+      "position": [
+        7232,
+        3008
+      ],
+      "id": "85559f8d-4c91-4763-8844-674caf0c6691",
+      "name": "Result_Saver",
+      "credentials": {
+        "microsoftSql": {
+          "id": "ZBhYh5pyqiSmAH3m",
+          "name": "Microsoft SQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"output\": $node[\"AI_Agent\"].json[\"output\"], \"studentId\": $node[\"Student_Finder\"].json.ID } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        7440,
+        3008
+      ],
+      "id": "c5f4d9c9-01d5-410e-9dae-6f2a114fd32a",
+      "name": "Success_Responder"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": false, \"error\": true, \"message\": \"Geçersiz ilgi alani girdisi. Lütfen sadece harf, rakam ve boşluk kullanın.\" } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        6032,
+        3312
+      ],
+      "id": "cf34a97e-b9ef-4372-b554-432dde741b9d",
+      "name": "Invalid_Responder"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": false, \"error\": true, \"message\": \"Şu anda bu alanda bekleyen ve işlenebilecek öğrenci kaydı bulunmuyor.\" } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        6432,
+        3312
+      ],
+      "id": "94acab72-2813-469a-85fc-65555fd2f2fd",
+      "name": "NoRecord_Responder"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Input_Validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input_Validator": {
+      "main": [
+        [
+          {
+            "node": "Check_Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check_Input": {
+      "main": [
+        [
+          {
+            "node": "Student_Finder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Invalid_Responder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Student_Finder": {
+      "main": [
+        [
+          {
+            "node": "Check_Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check_Record": {
+      "main": [
+        [
+          {
+            "node": "Student_Locker",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "NoRecord_Responder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Student_Locker": {
+      "main": [
+        [
+          {
+            "node": "AI_Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI_Agent": {
+      "main": [
+        [
+          {
+            "node": "Output_Sanitizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output_Sanitizer": {
+      "main": [
+        [
+          {
+            "node": "Result_Saver",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Result_Saver": {
+      "main": [
+        [
+          {
+            "node": "Success_Responder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini_Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI_Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "7c2ba34c-e78e-411b-94c4-4a697fd8b8e8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "222aef2b3d9f8adb55dab077e7a94c14b82e816312e00b22f61b6ab5f2e3c82f"
+  },
+  "id": "sbaLnz8eLqTvbogE",
+  "tags": []
+}
